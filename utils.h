@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <sys/select.h>
 #include <stdbool.h>
+#include <dirent.h>
 
 #define GAME_DIR "jogos"
 #define MAX_PLAYER 30
@@ -29,7 +30,6 @@ typedef struct {
 
 typedef struct{
 		char resposta[100];
-	
 }msg,pMsg;
 
 #endif

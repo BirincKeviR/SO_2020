@@ -8,15 +8,17 @@ void regras() {
 	printf("Jogo das Capitais\nInsira o capital do pais perguntado\n");
 }
 
+int pontos=0;
 void terminar() {
 	printf("O jogo foi encerrado");
+	printf("Parabens voce conseguiu pontos%d", pontos);
 	exit(1);
 }
 
 int main()
 {
 
-	const char* nomes[176][2] = { 
+	const char* nomes[176][2] = {
 								{"Angola " , " Luanda"},
 								{"Argélia " , " Argel"},
 								{"Botswana " , " Gaborone"},
@@ -195,12 +197,12 @@ int main()
 								{"Vanuatu " , " Porto Vila"}
 								};
 	char capital[50];
-	int random,pontos=0;
+	int random;
 
 	regras();
 	printf("Eu teho i PID= %d .. \n", getpid());
-	signal(SIGUSR1, regras);
-	signal(SIGUSR2, terminar);
+	signal(SIGUSR2, regras);
+	signal(SIGUSR1, terminar);
 
 	while (1) {
 		random = rand() % 176;

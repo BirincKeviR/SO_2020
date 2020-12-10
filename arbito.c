@@ -18,20 +18,20 @@ void verifica_var_amb(char *dir,int *max) {
 }
 
 void addUser(cli *c, cli *Users, int *n, int max){
-	int i;	
+	int i;
 
 	for(i=0;i<max;i++)
   		if((Users+i)->aceite==-1)
   			break;
-  		
+
   	 if(i==max)
-  	 { 
+  	 {
   	 	printf("\nNao existem vagas\n"); fflush(stdout);
   	 	strcpy(c->res, "Nao existem vagas");
   	 	return;
   	 }
-  	
-  	 
+
+
   	 char nome[15], nomeaux[40];
   	 int j,st,x;
   	 strcpy(nome,c->nome);
@@ -40,51 +40,95 @@ void addUser(cli *c, cli *Users, int *n, int max){
     		if((Users+j)->aceite==1)
 			if(strcmp((Users+j)->nome,nome)==0)
       			{
-				if(x) nome[strlen(nome)-1]='\0';
-				
+				if(x)
+					nome[strlen(nome)-1]='\0';
+
         			sprintf(nomeaux,"%s%d",nome,st++);
       				strcpy(nome,nomeaux);
 				x=1;
         			j=-1;
       			}
   	}
-	
+
 	*n = *n + 1;			//estas 3 linhas provavelmente vao de cona com mutex ñ sei
 	strcpy(c->nome,nome);
 	c->aceite = 1;
-	
+
 	strcpy((Users+i)->nome,nome);
   	(Users+i)->pid=c->pid;
   	(Users+i)->aceite=1;
 
-  	return;	
+  	return;
 	}
-	
-	
+
+
 	void mostraJogadores(cli *clientes, int max){
-			
 			for(int i=0;i<max;i++)
   				if((clientes+i)->aceite==1)
   					printf("\nNome: %s\nJogo: %s\n", (clientes+i)->nome, (clientes+i)->nomeJogo);
 	}
-	
-	
-	
+
+char** verificarJogos(char dir[],int *c){
+	DIR *dr = opendir(dir);
+	struct dirent *de;
+	char **temp=NULL;
+
+
+	if (dr == NULL)
+	{
+			printf("ERRO - Diretorio nao encontrado");
+			return NULL;
+	}
+	printf("antes do ciclo\n" );
+	while ((de = readdir(dr)) != NULL){
+		printf("nome de todos %s\n" ,de->d_name);
+		if (de->d_name==NULL) {
+			return NULL;
+		}
+		 if(de->d_name[0]=='g' && de->d_name[1]=='_'){
+ 			printf("nome dos que interesam %s\n" ,de->d_name);
+			 (*c)++;
+			 if(temp==NULL){
+	 				temp=malloc(sizeof(char*));
+	 	   }else{
+	 				temp=realloc(temp,(*c)*sizeof(char*));
+	  	 }
+	  	 		printf("ola3\n" );
+					temp[*c]=malloc(sizeof(char)*50);
+				 		strcmp(temp[(*c)-1],"de->d_name");
+						printf("ola6\n" );
+			}
+
+
+	}
+	closedir(dr);
+	for(int i=0;i<*c-1;i++)
+	 printf("temp %s\n", temp[i]);
+	return temp;
+}
+
+void encerrrar(int a){
+	unlink(FIFO_SRV);
+	exit(1);
+}
 
 int main(int argc, char** argv) {
 
-	char game_dir[50], fifo[40], cmd[40];
-	int max_player, duracao_camp,tempo_espera, fd, fdr, num, res, nPlayers=0;
+	char game_dir[50], fifo[40], cmd[40],**nomeJogos=NULL;
+	int max_player, duracao_camp,tempo_espera, fd, fdr, num, res, nPlayers=0,numJogos=0;
 	cli c;
 	bool termina = false;
-	
-	
+
+
 	struct timeval tempo;
 	fd_set fds;
-	
-	
+
+
+				/*------------------Sianis------------------*/
+				signal(SIGINT,encerrrar);
+
 				/*------------------Argumentos & outras cenas------------------*/
-			
+
 	if (argc < 3) {
 			printf("ERRO - FALTAMARGUMENTOS NA LINHA DE COMANDOS\n");
 			exit(-1);
@@ -99,11 +143,21 @@ int main(int argc, char** argv) {
 			exit(-1);
 		}
 	}
-	
+
 	verifica_var_amb(game_dir, &max_player);
 	cli clientes[max_player];
-	
-	  	for(int i=0;i<max_player;i++)
+
+	//numero de jogos
+	nomeJogos=verificarJogos(game_dir,&numJogos);
+		printf("jogo %s %d\n",nomeJogos[0],numJogos);
+	for(int i=0;i<numJogos-1;i++){
+		printf("jogo %s\n",nomeJogos[i]);
+	}
+
+
+	printf("%d\n", numJogos);
+
+	for(int i=0;i<max_player;i++)
   	{
   		clientes[i].aceite=-1;
   		clientes[i].pid=-1;
@@ -121,27 +175,27 @@ int main(int argc, char** argv) {
 		fprintf(stderr, "ERRO Ja existe um servidor a funcionar!\n");
 		exit(1);
 	}
-	
-	
+
+
 		fd = open(FIFO_SRV, O_RDWR);
 	do{
-		
-		
+
+
 		printf("\nCOMANDO: ");	fflush(stdout);
-		
+
 		FD_ZERO(&fds);
 		FD_SET(0, &fds);	//TECLADO
-		FD_SET(fd, &fds);	//FIFO  	
+		FD_SET(fd, &fds);	//FIFO
 		//tempo.tv_sec = 5; tempo.tv_usec = 0;
 		res = select(fd+1, &fds, NULL, NULL, NULL);
-		
+
 		if(res == 0){
 			//PODEMOS USAR ISTO PRA TERMINAR OS JOGOS AO FIM D X TEMPO TALVEZ
 		}
 		else if(res > 0 && FD_ISSET(0, &fds)){
 			scanf("%s",cmd);
 			printf("processar o cmd -> %s", cmd);
-			
+
 				if(strcmp(cmd, "exit")==0){
 					termina = true;
 				}
@@ -154,33 +208,32 @@ int main(int argc, char** argv) {
 				}
 		}
 		else if(res>0 && FD_ISSET(fd, &fds)){
-			
+
 			//comunicaçoes
-				
+
 				num = read(fd, &c, sizeof(cli));
-		
+
 				if(num == sizeof(cli)){
 					if(c.aceite == -1){
 						addUser(&c, clientes, &nPlayers, max_player);
 					}
-						
-						
+
 					sprintf(fifo, FIFO_CLI, c.pid); //poder saber a quem responder
 					fdr = open(fifo, O_WRONLY);
-			
+
 					num = write(fdr, &c, sizeof(cli));
 					close(fdr);
 				}
-		}		
-		
+		}
+
 	}while(termina != true);
-	
+
 	close(fd);
 	unlink(FIFO_SRV);
-	
-	exit(5);
-	
-	
 
-	
+	exit(5);
+
+
+
+
 }
